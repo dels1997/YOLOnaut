@@ -30,6 +30,22 @@ $\mathbf 1_{\text{noobj}\_ij}$. Several peculiarities of this function, such as
 issues with nondifferentiability and selection of responsible predictions, are
 outllined in code.
 
+After the initial implementation and debugging, we overfit the network on $1$
+image and then $100$ images, yielding the following expected results (since
+overfitting is the aim here, we temporarily remove the dropout layer from the
+network):
+
+<style>
+td, th {
+   border: none!important;
+}
+</style>
+
+![](./results/2007_000720_overfit_100.PNG)  |  ![](./results/2007_000363_overfit_100.PNG)
+:-:|:-:
+![](./results/2007_000925_overfit_100.PNG)  |  ![](./results/2007_000876_overfit_100.PNG)
+---
+
 ## Acknowledgements
 This project uses the Roboto font, which is developed by Google. The font is
 licensed under the Apache License, Version 2.0. You may obtain a copy of the
