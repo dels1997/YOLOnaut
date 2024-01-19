@@ -37,12 +37,6 @@ image and then a $100$ images, yielding the following expected results (since
 overfitting is the aim here, we temporarily remove the ```Dropout``` layer from
 the network):
 
-<style>
-td, th {
-   border: none!important;
-}
-</style>
-
 ![](./results/2007_000720_overfit_100.PNG)  |  ![](./results/2007_000363_overfit_100.PNG)
 :-:|:-:
 ![](./results/2007_000925_overfit_100.PNG)  |  ![](./results/2007_000713_overfit_100.PNG)
