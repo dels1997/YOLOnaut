@@ -245,6 +245,19 @@ class YOLOv1Loss(torch.nn.Module):
 
         return noobj_loss
 
+    def calculate_class_loss(
+            self, prediction: torch.Tensor, target: torch.Tensor
+        ) -> torch.Tensor:
+        class_loss = torch.sum(
+            (
+                (self.Iobj_i * prediction)[..., :self.C] - \
+                (self.Iobj_i * target)[..., :self.C]
+            ) ** 2,
+            dim=None
+        )
+
+        return class_loss
+
     def forward(
             self, prediction: torch.Tensor, target: torch.Tensor
         ) -> torch.Tensor:
