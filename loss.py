@@ -21,6 +21,149 @@ class YOLOv1Loss(torch.nn.Module):
         self.λcoord, self.λnoobj = λcoord, λnoobj
         self.S, self.B, self.C = S, B, C
 
+    def convert_boxes_to_tblr(
+            self, cell_x: torch.Tensor, cell_y: torch.Tensor,
+            boxes: torch.Tensor
+        ) -> torch.Tensor:
+        """Converts YOLO coordinates to top-left--bottom-right coordinates,
+        making it possible to find overlap between different rectangles (boxes).
+
+        Args:
+            cell_x: X coordinates of cells, for all examples in batch and all
+                cells in image, of shape (N, S, S, 1).
+            cell_y: Y coordinates of cells, for all examples in batch and all
+                cells in image, of shape (N, S, S, 1).
+            boxes: Rectangles given in YOLO coordinates, for all examples in
+                batch and all cells in image, of shape (N, S, S, 4).
+
+        Returns: 
+            tblr_boxes: Box rectangles given in top-left--bottom-right
+                coordinates, for all examples in batch and all cells in image,
+                of shape (N, S, S, 4).
+        """
+        tblr_boxes = torch.zeros_like(boxes, device=self.device)
+        tblr_boxes[..., 0] = self.Iobj_i[..., 4] * (
+            cell_x * self.cell_width + \
+            boxes[..., 0] * self.cell_width - \
+            boxes[..., 2] * self.image_width / 2
+        ) # x1 (x coordinate of top-left corner)
+        tblr_boxes[..., 1] = self.Iobj_i[..., 4] * (
+            cell_y * self.cell_height + \
+            boxes[..., 1] * self.cell_height - \
+            boxes[..., 3] * self.image_height / 2
+        ) # y1 (y coordinate of top-left corner)
+        tblr_boxes[..., 2] = self.Iobj_i[..., 4] * (
+            cell_x * self.cell_width + \
+            boxes[..., 0] * self.cell_width + \
+            boxes[..., 2] * self.image_width / 2
+        ) # x2 (x coordinate of bottom-right corner)
+        tblr_boxes[..., 3] = self.Iobj_i[..., 4] * (
+            cell_y * self.cell_height + \
+            boxes[..., 1] * self.cell_height + \
+            boxes[..., 3] * self.image_height / 2
+        ) # y2 (y coordinate of bottom-right corner)
+
+        return tblr_boxes
+
+    def find_tblr_coordinates_of_intersection(
+            self, tblr_boxes1: torch.Tensor, tblr_boxes2: torch.Tensor
+        ) -> torch.Tensor:
+        """Top-left--bottom-right coordinates of intersection are found as
+        maxima of top-left corners and minima of right-bottom corners."""
+        tblr_edges = torch.zeros(tblr_boxes1.shape, device=self.device)
+        tblr_edges[..., 0] = \
+            torch.maximum(tblr_boxes1[..., 0], tblr_boxes2[..., 0])
+        tblr_edges[..., 1] = \
+            torch.maximum(tblr_boxes1[..., 1], tblr_boxes2[..., 1])
+        tblr_edges[..., 2] = \
+            torch.minimum(tblr_boxes1[..., 2], tblr_boxes2[..., 2])
+        tblr_edges[..., 3] = \
+            torch.minimum(tblr_boxes1[..., 3], tblr_boxes2[..., 3])
+
+        return tblr_edges
+
+    def iou(self, boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
+        """Returns intersection-over-union of two rectangles given in YOLO
+        coordinates by converting them into absolute coordinates in image. Done
+        in vectorized way at once for all of the examples in batch and all
+        cells in image.
+
+        Args:
+            boxes1, boxes2: Rectangles given in YOLO coordinates, for all
+                examples in batch and all cells in image, of shape (N, S, S, 4).
+
+        Returns: 
+            _iou: IOU values for given box, across all examples and cells, of
+                shape (N, S, S, 1).
+        """
+        # Find row (x) and column (y) of each cell of initial tensors.
+        cell_tensor_shape = list(boxes1.shape)
+        cell_tensor_shape[-1] = 1
+
+        cell_x = torch.ones(
+            cell_tensor_shape, dtype=torch.float32, device=self.device)
+        cell_x = torch.einsum(
+            'ijkl,j->ijkl', cell_x,
+            torch.arange(
+                cell_tensor_shape[1], dtype=torch.float32, device=self.device)
+        )
+        cell_x = cell_x.squeeze()
+
+        cell_y = \
+            torch.ones(
+                cell_tensor_shape, dtype=torch.float32, device=self.device)
+        cell_y = torch.einsum(
+            'ijkl,k->ijkl', cell_y,
+            torch.arange(
+                cell_tensor_shape[2], dtype=torch.float32, device=self.device)
+        )
+        cell_y = cell_y.squeeze()
+
+        tblr_boxes1 = self.convert_boxes_to_tblr(cell_x, cell_y, boxes1)
+        tblr_boxes2 = self.convert_boxes_to_tblr(cell_x, cell_y, boxes2)
+
+        tblr_edges = \
+            self.find_tblr_coordinates_of_intersection(tblr_boxes1, tblr_boxes2)
+
+        # Intersection areas are simply found as rectangle areas, while ensuring
+        # that in the case of zero overlap, we return zero value instead of a
+        # possibly negative one.
+        intersection_width = (tblr_edges[..., 2] - tblr_edges[..., 0])
+        intersection_height = (tblr_edges[..., 3] - tblr_edges[..., 1])
+        intersection = \
+            torch.maximum(
+                torch.zeros_like(intersection_width), intersection_width
+            ) * \
+            torch.maximum(
+                torch.zeros_like(intersection_height), intersection_height
+            )
+
+        # Find the individual box areas.
+        box1_area = torch.abs(
+            (tblr_boxes1[..., 2] - tblr_boxes1[..., 0]) * \
+            (tblr_boxes1[..., 3] - tblr_boxes1[..., 1])
+        )
+        box2_area = torch.abs(
+            (tblr_boxes2[..., 2] - tblr_boxes2[..., 0]) * \
+            (tblr_boxes2[..., 3] - tblr_boxes2[..., 1])
+        )
+
+        # Area of union of two rectangles is equal to a sum of their areas
+        # minus the intersection area. The epsilon value is added so that in
+        # case of small areas, there is no issue of numerical instability and
+        # extremely large values when we divide by 'union' next.
+        union = box1_area + box2_area - intersection + EPSILON
+
+        _iou = intersection / union
+
+        # Add discarding negative values as an additional failsafe. Add
+        # discarding of extremely large values since it implies zero union, as
+        # per union formula.
+        # _iou = _iou * ((_iou >= 0) & (_iou <= (1.0 / EPSILON))).float()
+        _iou = _iou * ((_iou >= 0) & (_iou <= LARGE_VALUE)).float()
+
+        return _iou
+
     def forward(
             self, prediction: torch.Tensor, target: torch.Tensor
         ) -> torch.Tensor:
