@@ -9,7 +9,7 @@ import torch
 import torch.utils.data
 from PIL import Image
 
-
+# TODO: Add type annotations.
 def encode(_classes, CLASSES):
     """Create a one-hot encoding in matrix form for a string list '_classes'
     using scikit-learn, preserving their order.
@@ -123,29 +123,6 @@ def read_save_xml_to_yolo_notation(
                 dst_file.write(
                     ' '.join(str(elem) for elem in yolo_annotation) + '\n'
                 )
-
-# def relative_to_yolo_notation(x, y, w, h, image_width, image_height, S):
-    # """Convert relative (to the whole image) notation to YOLO coordinates in
-    # format (cell_x, cell_y, class_one_hot, x, y, w, h, c), with w and h with
-    # respect to the whole image, x and y with respect to a particular cell, c
-    # being the confidence that there exists an object in a particular cell, and
-    # then save them."""
-    
-#     cell_width = image_width / S
-#     cell_height = image_height / S
-
-#     cell_x = int(x / cell_width)
-#     x_rel = (x - (cell_width) * (x // (cell_width))) / (cell_width)
-
-#     cell_y = int(y / cell_height)
-#     y_rel = (y - (cell_height) * (y // (cell_height))) / (cell_height)
-
-#     cell = cell_y * S + cell_x
-    
-#     w_rel = w
-#     h_rel = h
-
-#     return cell, x_rel, y_rel, w_rel, h_rel
 
 def convert_yolo_to_tensor_notation(list_of_boxes, S, C):
     """Converts the YOLO notation of class encoding and relative coordinates to
