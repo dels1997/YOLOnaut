@@ -219,6 +219,32 @@ class YOLOv1Loss(torch.nn.Module):
 
         return wh_loss
 
+    def calculate_obj_loss(
+            self, prediction: torch.Tensor, target: torch.Tensor
+        ) -> torch.Tensor:
+        obj_loss = 0
+        for b in range(self.B):
+            obj_loss += torch.sum(
+                ((self.Iobj_ij * prediction)[..., self.C + 5 * b + 4] - \
+                (self.Iobj_ij * target)[..., self.C + 5 * b + 4]) ** 2,
+                dim=None
+            )
+
+        return obj_loss
+
+    def calculate_noobj_loss(self, prediction: torch.Tensor) -> torch.Tensor:
+        noobj_loss = 0
+        for b in range(self.B):
+            noobj_loss += self.λnoobj * torch.sum(
+                ((self.Inoobj_ij * prediction)[..., self.C + 5 * b + 4] - \
+                torch.zeros_like(
+                    (self.Inoobj_ij * prediction)[..., self.C + 5 * b + 4]
+                )) ** 2,
+                dim=None
+            )
+
+        return noobj_loss
+
     def forward(
             self, prediction: torch.Tensor, target: torch.Tensor
         ) -> torch.Tensor:
