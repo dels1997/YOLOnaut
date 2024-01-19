@@ -183,6 +183,42 @@ class YOLOv1Loss(torch.nn.Module):
 
         return xy_loss
 
+    def calculate_wh_loss(
+            self, prediction: torch.Tensor, target: torch.Tensor
+        ) -> torch.Tensor:
+        """Since predictions can generally produce negative values for w and h,
+        their absolute values are taken. Also, small values are added to them
+        due to the absolute value function not being differentiable near zero.
+        Finally, the square roots are multiplied by sign of the initial
+        predictions so that possible negativity is accounted for. None of this
+        is required for target values since they are strictly positive."""
+        wh_loss = 0
+        for b in range(self.B):
+            wh_loss += self.λcoord * torch.sum(
+                (
+                    torch.sign(
+                        (self.Iobj_ij * prediction)[
+                            ..., self.C + 5 * b + 2:self.C + 5 * b + 4
+                        ]
+                    ) * \
+                    torch.sqrt(
+                        torch.abs(
+                            (self.Iobj_ij * prediction)[
+                                ..., self.C + 5 * b + 2:self.C + 5 * b + 4
+                            ] + EPSILON
+                        )
+                    ) - \
+                    torch.sqrt(
+                        (self.Iobj_ij * target)[
+                            ..., self.C + 5 * b + 2:self.C + 5 * b + 4
+                        ]
+                    )
+                ) ** 2,
+                dim=None
+            )
+
+        return wh_loss
+
     def forward(
             self, prediction: torch.Tensor, target: torch.Tensor
         ) -> torch.Tensor:
