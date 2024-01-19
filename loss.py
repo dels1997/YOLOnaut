@@ -10,6 +10,14 @@ LARGE_VALUE = config.LARGE_VALUE
 # TODO: self.Iobj_i filtering should be separate from convert_boxes_to_tblr
 # function.
 
+
+class YOLOLoss(torch.nn.Module):
+    def __new__(cls, version, **kwargs):
+        if version == 1:
+            return YOLOv1Loss(**kwargs)
+        else:
+            raise ValueError("Unsupported YOLO version {}!".format(version))
+
 class YOLOv1Loss(torch.nn.Module):
     def __init__(
             self, image_width, image_height, S, B, C, λcoord=5, λnoobj=0.5
