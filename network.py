@@ -16,6 +16,13 @@ class ResNet50Bottom(torch.nn.Module):
         x = self.features(x)
         return x
 
+class YOLO(torch.nn.Module):
+    def __new__(cls, version: int, **kwargs) -> torch.nn.Module:
+        if version == 1:
+            return YOLOv1(**kwargs)
+        else:
+            raise ValueError("Unsupported YOLO version {}!".format(version))
+
 class YOLOv1(torch.nn.Module):
     def __init__(self, S: int, B: int, C: int) -> None:
         # TODO: Pass argument to decide on pretraining.
