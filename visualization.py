@@ -13,6 +13,7 @@ FONT_SIZE_RATIO_OF_IMAGE_WIDTH = config.FONT_SIZE_RATIO_OF_IMAGE_WIDTH
 
 font_path = config.LABEL_FONT_PATH
 
+
 def get_contrast_text_color(background_color):
     luminance = \
         0.299 * background_color[0] + \
@@ -22,6 +23,7 @@ def get_contrast_text_color(background_color):
     text_color = 'dimgray' if luminance > 0.5 else 'whitesmoke'
     return text_color
 
+# TODO: Handle different fonts and dynamic label placing better.
 def visualize_single_prediction_tensor_notation(
         image_path, target_path, S=S, C=C,THRESHOLD=THRESHOLD,
         color_map_name='hsv_r', font_path=font_path
