@@ -1,3 +1,5 @@
+import os
+
 model_parameters = {
     "version": 1,
     "C": 20,
@@ -29,3 +31,14 @@ training_parameters = {
 EPSILON = 1e-7
 THRESHOLD = 0.8
 LARGE_VALUE = 1e10
+
+ROOT_DATASET_PATH = \
+  '???/VOCtrainval_11-May-2012/VOCdevkit/VOC2012/'
+
+LABEL_FONT_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "Roboto-Light.ttf"
+)
+
+FONT_SIZE_RATIO_OF_IMAGE_WIDTH = 0.02
+LABEL_PAD = 2.5
