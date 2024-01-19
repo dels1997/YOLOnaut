@@ -5,6 +5,11 @@ import config
 EPSILON = config.EPSILON
 LARGE_VALUE = config.LARGE_VALUE
 
+# TODO: Write unit tests, particularly for IOU and in general functions that are
+# independent of a particular architecture.
+# TODO: self.Iobj_i filtering should be separate from convert_boxes_to_tblr
+# function.
+
 class YOLOv1Loss(torch.nn.Module):
     def __init__(
             self, image_width, image_height, S, B, C, λcoord=5, λnoobj=0.5
