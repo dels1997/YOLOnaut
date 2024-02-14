@@ -58,21 +58,8 @@ can easily be debugged by training only the final layers of the
 inclusion of specific loss terms only (along with the usual overfitting tests
 which were done for YOLOv1).
 
-After the additional training of the pretrained network, the following demo
-is produced:
+### YOLOv5
 
-TODO: Add demo.
-
-## General Use
-Dockerfile.
-
-## TODO.
-Raise more important TODOs as GitHub issues.
-- API.
-- How to use the pretrained networks for inference.
-- How to train the networks from scratch.
-- Upload YOLOv2 implementation.
-- Implement YOLOv3.
 
 ## Acknowledgements
 We are grateful to the PSIML crew for the opportunity to work on this project
