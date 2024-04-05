@@ -60,6 +60,7 @@ which were done for YOLOv1).
 
 ### YOLOv5
 
+https://github.com/Kovelja009/YOLOnaut/assets/81018289/4e6f6723-cea0-4306-823f-f726c2ef7870
 
 ## Acknowledgements
 We are grateful to the PSIML crew for the opportunity to work on this project
@@ -68,3 +69,4 @@ and mentors from Microsoft and Everseen for their guidance and support.
 This project uses the Roboto font, which is developed by Google. The font is
 licensed under the Apache License, Version 2.0. You may obtain a copy of the
 License at http://www.apache.org/licenses/LICENSE-2.0.
+
